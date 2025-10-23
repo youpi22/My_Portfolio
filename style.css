@@ -281,7 +281,7 @@ html.lenis {
 .blk .ylwbtn {
     position: relative;
     padding: 16px 32px;
-    border: 1px solid #ffffff;
+    border: 1px solid #000000;
     font-weight: 800;
     background-color: #FFD369;
     justify-content: center;
@@ -291,6 +291,7 @@ html.lenis {
     margin-bottom: 0;
     font-size: 20px;
     cursor: pointer;
+    border-radius: 15px; /* Added small round corners */
 }
 
 
@@ -465,6 +466,7 @@ html.lenis {
         -webkit-box-align: center;
         align-content: center;
         cursor: pointer;
+        border-radius: 15px;
 
     }
 
@@ -481,6 +483,7 @@ html.lenis {
         -webkit-box-align: center;
         align-content: center;
         cursor: pointer;
+        border-radius: 15px;
 
 
     }
