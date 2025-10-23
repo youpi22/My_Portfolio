@@ -145,7 +145,7 @@ html.lenis {
 .ylw {
     position: relative;
     display: flex;
-    background: linear-gradient(90deg, #2B0B3F 0%, #5B2C98 50%, #FF3CAC 100%);
+    background:  #5B2C98;
     width: 50%;
     height: 100lvh;
    
