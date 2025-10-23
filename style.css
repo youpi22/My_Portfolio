@@ -466,7 +466,8 @@ html.lenis {
         -webkit-box-align: center;
         align-content: center;
         cursor: pointer;
-        border-radius: 15px;
+    
+       
 
     }
 
@@ -483,7 +484,7 @@ html.lenis {
         -webkit-box-align: center;
         align-content: center;
         cursor: pointer;
-        border-radius: 15px;
+     
 
 
     }
