@@ -97,7 +97,20 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="jodsy.png" class="work-img">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="jodsy.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="jodsy1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="jodsy2.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="jodsy3.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
             <section class="page2">
@@ -126,7 +139,20 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="20-degree.png" class="work-img img2">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="20-degree.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="20-degree1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="20-degree2.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="20-degree3.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
            
@@ -155,7 +181,17 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="ticketstation.png" class="work-img img2">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="ticketstation.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="ticket-station1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="ticket-station2.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
             <section class="page2">
@@ -181,7 +217,17 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="vvst1.png" class="work-img">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="vvst1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="ihub1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="ihub2.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
             
@@ -209,7 +255,17 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="sample1.png" class="work-img">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="sample1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="samplew.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="sampleq.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
 
@@ -236,7 +292,17 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="sample2.png" class="work-img">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="sample2.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="ask1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="ask2.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
 
@@ -265,7 +331,17 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="sample3.png" class="work-img">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="sample3.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="shirt1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="shirt2.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
 
@@ -292,7 +368,17 @@
                     </div>
                 </div>
                 <div class="ylw">
-                    <img src="sample4.png" class="work-img">
+                    <div class="work-slider">
+                    <div class="work-slide">
+                        <img src="sample4.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="shop1.png" >
+                    </div>
+                    <div class="work-slide">
+                        <img src="shop2.png" >
+                    </div>
+                    </div>
                 </div>
             </section>
             
@@ -546,6 +632,35 @@
     lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
   });
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const sliders = document.querySelectorAll('.work-slider');
+
+  sliders.forEach(slider => {
+    const slides = slider.querySelectorAll('.work-slide');
+    let current = 0;
+
+    function showSlide(index) {
+      slides.forEach((slide, i) => {
+        slide.classList.remove('active', 'prev');
+        if (i === index) slide.classList.add('active');
+        if (i === (index - 1 < 0 ? slides.length - 1 : index - 1)) slide.classList.add('prev');
+      });
+    }
+
+    function nextSlide() {
+      current = (current + 1) % slides.length;
+      showSlide(current);
+    }
+
+    showSlide(current);
+    setInterval(nextSlide, 3000); // auto-slide every 3 seconds
+  });
+});
+</script>
+
+
     
 </body>
 
