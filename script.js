@@ -1,4 +1,5 @@
 
+// Smooth scrolling (Lenis) + GSAP ScrollTrigger integration
 const lenis = new Lenis()
 
 lenis.on('scroll', (e) => {
@@ -8,13 +9,41 @@ lenis.on('scroll', (e) => {
 lenis.on('scroll', ScrollTrigger.update)
 
 gsap.ticker.add((time)=>{
-  lenis.raf(time * 300)
+  // GSAP provides time in seconds; Lenis expects milliseconds
+  lenis.raf(time * 1000)
 })
 
 gsap.ticker.lagSmoothing(0)
 
+// Ensure ScrollTrigger is available (CDN is included in HTML)
+if (typeof ScrollTrigger !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 let animationsTriggered = false;
 gsap.set("#work .h1-heading", { y: 50, opacity: 0 });
+gsap.set(".intro-logo", { y: 20, opacity: 0, scale: 0.96 });
+gsap.set(".intro-tag", { y: 30, opacity: 0 });
+
+function animateNavbar() {
+  const tl = gsap.timeline();
+  tl.from(".nav", {
+    y: -30,
+    opacity: 0,
+    duration: 0.6,
+    ease: "power2.out",
+  })
+    .from(
+      ".nav-items a, .nav-icons a",
+      {
+        x: -60,
+        opacity: 0,
+        ease: "power1.out",
+        stagger: { each: 0.08 },
+      },
+      "-=0.2"
+    );
+}
 
 function animateNavItems() {
   gsap.from(".nav-items a, .nav-icons a", {
@@ -65,16 +94,27 @@ function startAnimations() {
 
     const mainContent = document.querySelector(".mainwrapper");
     gsap.to(mainContent, { opacity: 1, duration: 1 });
-    animateNavItems();
+    // Animate navbar container first, then its items
+    animateNavbar();
     animatePage1();
+    initScrollTriggers();
     animationsTriggered = true; // Mark the animations as triggered
   }
 }
-window.addEventListener("load", function () {
-  setTimeout(function () {
+function animateImpression() {
+  const intro = document.getElementById('intro');
+  if (!intro) { startAnimations(); return; }
 
-    startAnimations();
-  }, 10); // 1.5 seconds delay
+  const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+  tl.to(".intro-logo", { y: 0, opacity: 1, scale: 1, duration: 0.6 })
+    .to(".intro-tag", { y: 0, opacity: 1, duration: 0.45 }, "-=0.25")
+    .to("#intro", { opacity: 0, duration: 0.5, delay: 0.3 })
+    .set("#intro", { display: "none", pointerEvents: "none" })
+    .add(startAnimations);
+}
+
+window.addEventListener("load", function () {
+  animateImpression();
 });
 
 const dot = document.querySelector('.dot');
@@ -103,6 +143,38 @@ document.addEventListener('mouseleave', () => {
 document.addEventListener('mouseenter', () => {
   dot.style.opacity = '1';
 });
+
+// Hide/show top navbar on scroll + apply scrolled style
+let lastScrollTop = 0;
+const navEl = document.querySelector('.nav');
+
+window.addEventListener('scroll', () => {
+  // Don't auto-hide while the mobile menu is open
+  if (navEl.classList.contains('nav--open')) return;
+  const st = window.pageYOffset || document.documentElement.scrollTop;
+  if (st > lastScrollTop + 5) {
+    navEl.classList.add('nav--hidden');
+  } else {
+    navEl.classList.remove('nav--hidden');
+  }
+  navEl.classList.toggle('nav--scrolled', st > 20);
+  lastScrollTop = st <= 0 ? 0 : st;
+});
+
+// Mobile hamburger toggle
+const hamburger = document.getElementById('hamburger');
+if (hamburger && navEl) {
+  hamburger.addEventListener('click', () => {
+    const open = navEl.classList.toggle('nav--open');
+    hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.querySelectorAll('.nav-items a').forEach((link) => {
+    link.addEventListener('click', () => {
+      navEl.classList.remove('nav--open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
 
 const headings = document.querySelectorAll('.h1-heading, #work img, .pageaboutdesc');
 
@@ -226,3 +298,238 @@ gsap.to(".contact-form h1",{
     yoyo:true,
     repeat:-1,
 })
+
+// ---------- Scroll-triggered reveals & parallax ----------
+function initScrollTriggers() {
+  // Data-attribute driven reveals: [data-reveal="left|right|up|fade"]
+  setupDataReveal();
+
+  // Roles and action buttons in project sections
+  document.querySelectorAll('.page2 .roles').forEach((el) => {
+    gsap.from(el, {
+      y: 20,
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: el,
+        start: 'top 85%',
+        toggleActions: 'play none none reverse'
+      }
+    });
+  });
+
+  document.querySelectorAll('.page2 .page2-buttons').forEach((el) => {
+    gsap.from(el, {
+      y: 20,
+      opacity: 0,
+      scale: 0.96,
+      duration: 0.5,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: el,
+        start: 'top 85%',
+        toggleActions: 'play none none reverse'
+      }
+    });
+  });
+
+  // Subtle scale-in for each work slider container
+  document.querySelectorAll('.work-slider').forEach((slider) => {
+    gsap.from(slider, {
+      opacity: 0,
+      scale: 0.98,
+      duration: 0.6,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: slider,
+        start: 'top 80%',
+        toggleActions: 'play none none reverse'
+      }
+    });
+
+    // Lightweight parallax for images inside sliders
+    slider.querySelectorAll('.work-slide img').forEach((img) => {
+      gsap.to(img, {
+        yPercent: 6,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: slider,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: true
+        }
+      });
+    });
+  });
+
+  // Contact section soft reveal
+  const contact = document.querySelector('.contact-form');
+  if (contact) {
+    gsap.from(contact, {
+      opacity: 0,
+      y: 20,
+      duration: 0.5,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: contact,
+        start: 'top 85%',
+        toggleActions: 'play none none reverse'
+      }
+    });
+  }
+
+  // Refresh once after setup (important when using Lenis)
+  if (typeof ScrollTrigger !== 'undefined') {
+    ScrollTrigger.refresh();
+  }
+}
+
+// Drive ScrollTrigger animations via data attributes
+function setupDataReveal() {
+  const elems = document.querySelectorAll('[data-reveal]');
+  elems.forEach((el) => {
+    const type = (el.getAttribute('data-reveal') || 'fade').toLowerCase();
+    const offset = parseInt(el.getAttribute('data-reveal-offset') || '50', 10);
+    const duration = parseFloat(el.getAttribute('data-reveal-duration') || '0.6');
+    const delay = parseFloat(el.getAttribute('data-reveal-delay') || '0');
+    const ease = el.getAttribute('data-reveal-ease') || 'power2.out';
+    const start = el.getAttribute('data-reveal-start') || 'top 85%';
+    const toggle = el.getAttribute('data-reveal-toggle') || 'play none none reverse';
+    const once = (el.getAttribute('data-reveal-once') || 'false') === 'true';
+
+    const fromVars = { autoAlpha: 0 };
+    const toVars = { autoAlpha: 1, duration, delay, ease };
+
+    switch (type) {
+      case 'left':
+        fromVars.x = -offset;
+        toVars.x = 0;
+        break;
+      case 'right':
+        fromVars.x = offset;
+        toVars.x = 0;
+        break;
+      case 'up':
+        fromVars.y = -offset;
+        toVars.y = 0;
+        break;
+      case 'fade':
+      default:
+        break;
+    }
+
+    gsap.fromTo(el, fromVars, {
+      ...toVars,
+      scrollTrigger: {
+        trigger: el,
+        start,
+        toggleActions: toggle,
+        once,
+      },
+    });
+  });
+}
+
+// ---------- Work slider implementation ----------
+function setupWorkSlider(slider) {
+  const slides = Array.from(slider.querySelectorAll('.work-slide'));
+  if (!slides.length) return;
+
+  let index = 0;
+  let autoplayTimer = null;
+  const AUTOPLAY_MS = 4000;
+
+  // Inject controls and dots
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'work-prev';
+  prevBtn.setAttribute('aria-label','Previous slide');
+  prevBtn.innerHTML = '&#10094;';
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'work-next';
+  nextBtn.setAttribute('aria-label','Next slide');
+  nextBtn.innerHTML = '&#10095;';
+
+  const dotsWrap = document.createElement('div');
+  dotsWrap.className = 'work-dots';
+  const dots = slides.map((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'work-dot';
+    d.setAttribute('role','button');
+    d.setAttribute('aria-label', `Go to slide ${i+1}`);
+    dotsWrap.appendChild(d);
+    return d;
+  });
+
+  slider.appendChild(prevBtn);
+  slider.appendChild(nextBtn);
+  slider.appendChild(dotsWrap);
+
+  function updateSlides(newIndex) {
+    slides.forEach((s, i) => {
+      s.classList.remove('active','prev');
+      s.style.left = '100%';
+      s.style.opacity = '0';
+    });
+    const prevIndex = (newIndex - 1 + slides.length) % slides.length;
+    slides[prevIndex].classList.add('prev');
+    slides[prevIndex].style.left = '-100%';
+    slides[newIndex].classList.add('active');
+    slides[newIndex].style.left = '0';
+    slides[newIndex].style.opacity = '1';
+    dots.forEach((d,i)=>d.classList.toggle('active', i === newIndex));
+    index = newIndex;
+  }
+
+  function next() { updateSlides((index + 1) % slides.length); }
+  function prev() { updateSlides((index - 1 + slides.length) % slides.length); }
+
+  prevBtn.addEventListener('click', prev);
+  nextBtn.addEventListener('click', next);
+  dots.forEach((d,i)=>d.addEventListener('click', ()=>updateSlides(i)));
+
+  // Autoplay
+  function startAutoplay(){
+    stopAutoplay();
+    autoplayTimer = setInterval(next, AUTOPLAY_MS);
+  }
+  function stopAutoplay(){
+    if (autoplayTimer) clearInterval(autoplayTimer);
+    autoplayTimer = null;
+  }
+  slider.addEventListener('mouseenter', stopAutoplay);
+  slider.addEventListener('mouseleave', startAutoplay);
+
+  // Pause when out of view
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry => {
+      if (entry.isIntersecting) startAutoplay(); else stopAutoplay();
+    });
+  },{ threshold: 0.3 });
+  io.observe(slider);
+
+  // Touch swipe
+  let touchStartX = null;
+  slider.addEventListener('touchstart', (e)=>{ touchStartX = e.changedTouches[0].clientX; }, {passive:true});
+  slider.addEventListener('touchend', (e)=>{
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+    touchStartX = null;
+  }, {passive:true});
+
+  // Keyboard
+  slider.setAttribute('tabindex','0');
+  slider.addEventListener('keydown', (e)=>{
+    if (e.key === 'ArrowRight') next();
+    if (e.key === 'ArrowLeft') prev();
+  });
+
+  // Initialize
+  updateSlides(0);
+  startAutoplay();
+}
+
+// Initialize all sliders on the page
+document.querySelectorAll('.work-slider').forEach(setupWorkSlider);

@@ -71,6 +71,33 @@ html.lenis {
     opacity: 0;
 }
 
+/* Intro overlay for first impression */
+.intro {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(1200px 600px at 20% 10%, rgba(255, 211, 105, 0.1), transparent 60%),
+              #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.intro-inner {
+  text-align: center;
+}
+.intro-logo {
+  color: #FFD369;
+  font-weight: 800;
+  letter-spacing: 1px;
+  font-size: clamp(28px, 6vw, 64px);
+}
+.intro-tag {
+  color: #E8E4C9;
+  margin-top: 6px;
+  font-size: clamp(12px, 2.2vw, 18px);
+  opacity: 0.9;
+}
+
 
 
 .nav {
@@ -95,8 +122,23 @@ html.lenis {
   height: 60px;
   /* CHANGE: Shadow on bottom */
   box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease-in-out;
   flex-wrap: wrap;
+}
+
+/* Hide navbar when scrolling down */
+.nav--hidden {
+  transform: translate(-50%, -120%);
+}
+
+/* Scrolled style: slightly more opaque and compact */
+.nav--scrolled {
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  height: 54px;
+  padding: 8px 18px;
 }
 
 
@@ -112,6 +154,17 @@ html.lenis {
   height: 3px;
   background-color: #FFD369;
   transition: all 0.3s ease;
+}
+
+/* Animate hamburger to X when nav is open */
+.nav--open .hamburger .bar1 {
+  transform: translateY(6px) rotate(45deg);
+}
+.nav--open .hamburger .bar2 {
+  opacity: 0;
+}
+.nav--open .hamburger .bar3 {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 
@@ -202,11 +255,31 @@ html.lenis {
   font-size: 1rem;
   transition: color 0.3s ease;
   font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  position: relative;
 }
 /* Optional styles for hover effect on navigation items */
 
 .nav-items a:hover {
   color: #ffcc00;
+}
+
+/* Animated underline for nav links */
+.nav-items a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 2px;
+  background-color: #FFD369;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+  opacity: 0.9;
+}
+
+.nav-items a:hover::after {
+  transform: scaleX(1);
 }
 
 .page1 h1 {
@@ -506,10 +579,11 @@ html.lenis {
 .work-slider {
   position: relative;
   width: 95%;
-  height: 55%;
-  margin: auto;
-  border-radius: 8px;
+  height: min(60vh, 600px);
+  margin: 0 auto;
+  border-radius: 12px;
   overflow: hidden;
+  background: #111;
 }
 
 .work-slide {
@@ -537,6 +611,55 @@ html.lenis {
   height: 100%;
   object-fit: cover; /* keeps full image proportion */
   border-radius: 8px;
+}
+
+/* Slider controls */
+.work-prev, .work-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.35);
+  color: #FFD369;
+  border: 1px solid rgba(255, 211, 105, 0.5);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+.work-prev { left: 12px; }
+.work-next { right: 12px; }
+.work-prev:hover, .work-next:hover { background: rgba(0,0,0,0.6); transform: translateY(-50%) scale(1.05); }
+
+.work-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+.work-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255, 211, 105, 0.7);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.work-dot.active { background: #FFD369; transform: scale(1.2); }
+
+@media screen and (max-width: 768px) {
+  .work-slider {
+    height: 40vh;
+    border-radius: 10px;
+  }
 }
 
 
@@ -904,6 +1027,31 @@ footer {
 }
 
 @media screen and (max-width: 768px) {
+.hamburger {
+    display: flex;
+}
+.nav-items {
+    display: none;
+    width: 100%;
+}
+.nav--open .nav-items {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 10px;
+}
+.nav--open {
+    height: auto; /* allow menu to expand */
+    flex-direction: column;
+    align-items: stretch;
+}
+.nav--open .nav-items a {
+    padding: 8px 0; /* easier taps */
+}
+.nav--open .nav-icons {
+    justify-content: center;
+}
 .nav {
     padding: 6% 2% 4% 2%; /* adjust bottom padding */
     width: 95%;
