@@ -15,9 +15,14 @@ gsap.ticker.add((time)=>{
 
 gsap.ticker.lagSmoothing(0)
 
+gsap.defaults({ overwrite: 'auto' })
+
 // Ensure ScrollTrigger is available (CDN is included in HTML)
 if (typeof ScrollTrigger !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
+}
+if (typeof Draggable !== 'undefined' && typeof MorphSVGPlugin !== 'undefined') {
+  gsap.registerPlugin(Draggable, MorphSVGPlugin);
 }
 
 let animationsTriggered = false;
@@ -151,18 +156,72 @@ function animateImpression() {
   if (!intro) { unlockInteraction(); startAnimations(); return; }
 
   lockInteraction();
-  const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-  tl.to(".intro-logo", { y: 0, opacity: 1, scale: 1, duration: 0.6 })
-    .to(".intro-tag", { y: 0, opacity: 1, duration: 0.45 }, "-=0.25")
-    .to("#intro", { opacity: 0, duration: 0.5, delay: 0.3 })
-    .set("#intro", { display: "none", pointerEvents: "none" })
-    .add(unlockInteraction)
-    .add(startAnimations);
+
+  const runIntro = () => {
+    stopBulbPrompt();
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+    tl.to(".intro-logo", { y: 0, opacity: 1, scale: 1, duration: 0.6 })
+      .to(".intro-tag", { y: 0, opacity: 1, duration: 0.45 }, "-=0.25")
+      .to(".bulb-prompt", { autoAlpha: 0, duration: 0.2 }, "<")
+      .to("#intro", { opacity: 0, duration: 0.5, delay: 0.3 })
+      .set("#intro", { display: "none", pointerEvents: "none" })
+      .add(unlockInteraction)
+      .add(startAnimations);
+  };
+
+  let bulbReady = false;
+  if (window.setupBulbSwitch && typeof window.setupBulbSwitch === 'function') {
+    const bulb = window.setupBulbSwitch();
+    bulbReady = !!bulb && !!bulb.toggleTimeline;
+  }
+
+  if (bulbReady) {
+    window.addEventListener('bulb-on', runIntro, { once: true });
+  } else {
+    runIntro();
+  }
 }
 
 window.addEventListener("load", function () {
   animateImpression();
+  setupBulbPrompt();
 });
+
+function setupBulbPrompt() {
+  const prompt = document.querySelector('.bulb-prompt');
+  if (!prompt) return;
+  const text = prompt.textContent;
+  const parts = text.split('').map((c) => (c === ' ' ? '&nbsp;' : c));
+  prompt.innerHTML = parts.map((c) => `<span class="bulb-ch">${c}</span>`).join('');
+  const spans = prompt.querySelectorAll('.bulb-ch');
+  gsap.set(spans, { display: 'inline-block' });
+  const qx = Array.from(spans).map((el) => gsap.quickSetter(el, 'x', 'px'));
+  const qy = Array.from(spans).map((el) => gsap.quickSetter(el, 'y', 'px'));
+  const qr = Array.from(spans).map((el) => gsap.quickSetter(el, 'rotation', 'deg'));
+  const ampY = 8;
+  const ampX = 5;
+  const speed = 2.2;
+  const phase = 0.45;
+  const tick = () => {
+    const t = gsap.ticker.time * speed;
+    for (let i = 0; i < spans.length; i++) {
+      const s = Math.sin(t + i * phase);
+      const c = Math.cos(t + i * phase);
+      qy[i](ampY * s);
+      qx[i](ampX * c * 0.6);
+      qr[i](12 * s);
+    }
+  };
+  window.__bulbPromptTicker = tick;
+  gsap.ticker.add(tick);
+}
+
+function stopBulbPrompt() {
+  if (window.__bulbPromptTicker) {
+    gsap.ticker.remove(window.__bulbPromptTicker);
+    window.__bulbPromptTicker = null;
+  }
+}
 
 const dot = document.querySelector('.dot');
 
@@ -657,6 +716,89 @@ function setupWorkSlider(slider) {
 // Initialize all sliders on the page
 document.querySelectorAll('.work-slider').forEach(setupWorkSlider);
 
+// Bulb switch setup (CodePen integration)
+window.setupBulbSwitch = function setupBulbSwitch() {
+  const cords = document.querySelectorAll('.toggle-scene__cord');
+  const hit = document.querySelector('.toggle-scene__hit-spot');
+  const dummy = document.querySelector('.toggle-scene__dummy-cord');
+  const dummyLine = document.querySelector('.toggle-scene__dummy-cord line');
+  if (!cords.length || !hit || !dummy || !dummyLine) {
+    return { toggleTimeline: gsap.timeline({ paused: true }) };
+  }
+  const proxy = document.createElement('div');
+  const endX = dummyLine.getAttribute('x2');
+  const endY = dummyLine.getAttribute('y2');
+  const reset = () => gsap.set(proxy, { x: endX, y: endY });
+  reset();
+
+  const toggleTL = gsap.timeline({
+    paused: true,
+    onStart: () => {
+      const root = document.documentElement;
+      const current = getComputedStyle(root).getPropertyValue('--on').trim();
+      const next = current === '1' ? 0 : 1;
+      toggleTL._turnOn = next === 1;
+      gsap.set(root, { '--on': next });
+      gsap.set([dummy, hit], { display: 'none' });
+      gsap.set(cords[0], { display: 'block' });
+      window.dispatchEvent(new CustomEvent('bulb-toggle', { detail: { on: next === 1 } }));
+    },
+    onComplete: () => {
+      gsap.set([dummy, hit], { display: 'block' });
+      gsap.set(cords[0], { display: 'none' });
+      reset();
+      if (toggleTL._turnOn) {
+        window.dispatchEvent(new Event('bulb-on'));
+      } else {
+        window.dispatchEvent(new Event('bulb-off'));
+      }
+    }
+  });
+
+  for (let i = 1; i < cords.length; i++) {
+    toggleTL.add(
+      gsap.to(cords[0], {
+        morphSVG: cords[i],
+        duration: 0.1,
+        repeat: 1,
+        yoyo: true
+      })
+    );
+  }
+
+  let startX = 0, startY = 0;
+  const makeDrag = (triggerEl) => Draggable.create(proxy, {
+    trigger: triggerEl,
+    type: 'x,y',
+    onPress: function() { startX = this.x; startY = this.y; },
+    onDrag: function() {
+      gsap.set(dummyLine, { attr: { x2: this.x, y2: this.y } });
+    },
+    onRelease: function() {
+      const distX = Math.abs(this.x - startX);
+      const distY = Math.abs(this.y - startY);
+      const travelled = Math.sqrt(distX * distX + distY * distY);
+      gsap.to(dummyLine, {
+        attr: { x2: endX, y2: endY },
+        duration: 0.1,
+        onComplete: () => {
+          if (travelled > 30) {
+            toggleTL.restart();
+          } else {
+            reset();
+          }
+        }
+      });
+    }
+  });
+  makeDrag(hit);
+  makeDrag(dummyLine);
+  const cordsGroup = document.querySelector('.toggle-scene__cords');
+  if (cordsGroup) makeDrag(cordsGroup);
+
+  return { toggleTimeline: toggleTL };
+};
+
 function setupDragDirection() {
   const dragImage = document.querySelector(".page1 .ylw img[src*='tp3']");
   if (!dragImage) return;
@@ -719,4 +861,97 @@ function animateTP3() {
   });
 }
 
-animateTP3();
+const iconCarrier_development = document.getElementById('icon-carrier-development');
+const bgCircle_1 = document.getElementById('bg-circle-1');
+const firstscreen_grp = document.getElementById('1st-screen');
+const secondscreen_grp = document.getElementById('2nd-screen');
+const thirdscreen_grp = document.getElementById('3rd-screen');
+
+gsap.set([firstscreen_grp], { xPercent: 20, yPercent: 20, autoAlpha: 0, scale: 0.8 });
+gsap.set([secondscreen_grp], { xPercent: 20, yPercent: 20, autoAlpha: 0, scale: 0.8 });
+gsap.set([thirdscreen_grp], { xPercent: 20, yPercent: 20, autoAlpha: 0, scale: 0.8 });
+
+function myOverFunction() {
+  gsap.to([firstscreen_grp], { duration: 0.45, xPercent: -60, yPercent: 0, autoAlpha: 0.5, scale: 1 });
+  gsap.to([secondscreen_grp], { duration: 0.75, xPercent: -40, yPercent: 0, autoAlpha: 0.5, scale: 1 });
+  gsap.to([thirdscreen_grp], { duration: 0.95, xPercent: -20, yPercent: 0, autoAlpha: 0.5, scale: 1 });
+  gsap.to(bgCircle_1, { duration: 0.75, yPercent: 10, xPercent: 35, scale: 0.85, fill: '#dedede', stroke: '#dedede', ease: 'expo.out' });
+  gsap.to('path#mainscreen-display-first', { duration: 1, attr: { d: 'M346,65.6l-139.3,57.7c-1.2,0.5-2,1.6-2.2,2.8l-16.3,108.3l138.8-9.7l24-155.1C351.5,66.7,348.6,64.5,346,65.6z' }, ease: 'expo.out' });
+  gsap.to('path#mainscreen-hw-upper-first', { duration: 1, attr: { d: 'M352.3,58.6l-150.9,62.5c-1.3,0.5-2.2,1.7-2.4,3.1l-17.6,117.2l150.3-10.5l26-168C358.2,59.8,355.2,57.4,352.3,58.6z' }, fill: '#ff8800', ease: 'expo.out' });
+  gsap.to('path#onoff-btn-first', { duration: 1, attr: { d: 'M251.3,253.5c-1.1,3.6-3.9,5-6.3,3c-2.4-2-3.4-6.6-2.3-10.3c1.1-3.7,4-5,6.3-3C251.4,245.2,252.4,249.8,251.3,253.5z' }, ease: 'expo.out' });
+  gsap.to('path#mainscreen-hw-lower-first', { duration: 1, attr: { d: 'M352.4,59.2l-150.1,61.1c-1.9,0.8-3.1,2.6-3.5,4.6l-20.4,134c-0.4,2.4,1.5,4.6,4,4.6l136.7-0.6c4.9,0,9-3.6,9.8-8.4l29.1-191C358.2,60.5,355.2,58.1,352.4,59.2z' }, ease: 'expo.out' });
+  gsap.to('path#mainscreen-depth-first', { duration: 1, attr: { d: 'M355.3,58.6l-148.6,64.6c-1.3,0.5-2.2,1.7-2.4,3.1l-24.6,134.4c0,1.1,2.4,4.1,4.8,4.1l139.2,0.4c4.6-0.1,9-4.7,9.7-8.4l29.7-190.4c0.2-0.9,0-1.5-0.4-2C360.9,61.3,356.9,59.3,355.3,58.6z' }, ease: 'expo.out' });
+  gsap.to('path#box-top', { duration: 1, attr: { d: 'M208.6,126.3l132.8-53.7l-3.8,21.8l-131.1,47L208.6,126.3z' }, ease: 'expo.out' });
+  gsap.to('path#box-right-bottom', { duration: 1, attr: { d: 'M322.5,192l-4,25.7l-126.1,11.5l2.4-15.6L322.5,192z' }, ease: 'expo.out' });
+  gsap.to('path#box-left-middle', { duration: 1, attr: { d: 'M195.6,209.2l10.1-63.2l39.1-13.3l-11,70L195.6,209.2z' }, ease: 'expo.out' });
+  gsap.to('path#box-right-middle', { duration: 1, attr: { d: 'M335.6,101l-13.1,85.8l-86,15l11-69.5L335.6,101z' }, ease: 'expo.out' });
+  gsap.to('path#blue-symbol-topleft', { duration: 1, attr: { d: 'M212.9,129.7c0.1-0.8-0.8-1.1-1.4-0.9c-0.5,0.2-1.5,1.2-1.6,2c-0.1,0.8,0.8,1.1,1.3,0.9C211.8,131.5,211.8,130.5,211.9,129.7z' }, ease: 'expo.out' });
+  gsap.to('path#coding-lines-big', { duration: 1, attr: { d: 'M272,130.8l-22.2,6.9 M249.2,143.5l28-8.3 M257.2,147l28.9-8.2 M295.4,142.4l-29.8,8.2 M284.7,151.1l-28.8,7.7 M273.4,159.7l-27.9,7.1 M265.6,167.5l-21.1,4.7 M271.9,171.9l-28.5,6.5 M278.7,176.7l-28.3,5.8 M258.6,186.8l29.2-5.9 M269.1,190.7l-11.1,2' }, ease: 'expo.out' });
+  gsap.to('path#coding-lines-min', { duration: 1, attr: { d: 'M327.6,105.8l-6.4,2.1 M321.1,109.3l8-2.5 M323.5,110.1l8.1-2.5 M334.1,108.3l-8.2,2.5 M331.3,110.6l-8.1,2.5 M328.2,112.9l-8,2.4 M326,115l-6.1,1.7 M327.9,116l-8.2,2.4 M329.7,117l-8,2.2 M324.2,120l8.1-2.3 M327.2,120.6l-3.1,0.9' }, ease: 'expo.out' });
+  gsap.to('path#mainscreen-leg-shadow-first', { duration: 1, attr: { d: 'M273.1,264.7c1,3.5,1.9,6.8,2.7,9.7c10.3,0.2,24.3,2.2,35.2,7.8c-3.8-11.4-5.8-19.1-5.8-19.1L273.1,264.7z' }, ease: 'expo.out' });
+  gsap.to('path#mainscreen-leg-first', { duration: 1, attr: { d: 'M305.1,263.1c0,0,3.4,12.7,9.4,29.7c1.6,4.6,1.4,8.2-2.6,8.9c-4,0.7-22.4,2.3-28,2.7c-7.5,0.5-8.8,0.4-17.1-0.3c-15.8-1.3-50.5-3.1-50.5-3.1s39-1,49-1.8c10-0.8,12.4-4.2,13.4-7.7c1-3.4-1.9-13.3-5.6-26.8L305.1,263.1z' }, ease: 'expo.out' });
+  gsap.to('path#shadow-under-first', { duration: 1, attr: { d: 'M372.3,304.7c0,3.3-45.1,4.8-97.3,5.3c-31.5,0.3-92.2-3.2-91.7-5.3c1.2-5.1,60.4-3,89.8-3.7C328.8,299.8,372.3,302.6,372.3,304.7z' }, ease: 'expo.out' });
+}
+
+function myOutFunction() {
+  gsap.to([firstscreen_grp], { duration: 0.45, xPercent: 20, yPercent: 20, autoAlpha: 0, scale: 0.8 });
+  gsap.to([secondscreen_grp], { duration: 0.35, xPercent: 20, yPercent: 20, autoAlpha: 0, scale: 0.8 });
+  gsap.to([thirdscreen_grp], { duration: 0.25, xPercent: 20, yPercent: 20, autoAlpha: 0, scale: 0.8 });
+  gsap.to(bgCircle_1, { duration: 1.25, yPercent: 0, xPercent: 0, scale: 1, fill: '#e6e6e6', stroke: '#e6e6e6', ease: 'elastic.out' });
+  gsap.to('path#mainscreen-display-first', { duration: 0.75, attr: { d: 'M361.1,101.8l-198.9,10.6c-2.5,0.2-3.9,1.5-3.9,3.3l-5.3,118.8l206.8,6.8l7.9-134.2C367.8,104.6,364.1,101.6,361.1,101.8z' }, ease: 'elastic.out' });
+  gsap.to('path#mainscreen-hw-upper-first', { duration: 0.75, attr: { d: 'M368.7,95.2l-211.1,12.7c-2.7,0.2-4.5,1.9-4.7,3.9l-5.8,128.5l220,8.7l8.6-148C375.9,98.2,371.9,95,368.7,95.2z' }, fill: '#695f5e', ease: 'elastic.out' });
+  gsap.to('path#onoff-btn-first', { duration: 0.75, attr: { d: 'M263.8,261.5c-1.5,3.8-5.5,5.3-8.8,3.2c-3.4-2.1-4.8-7-3.3-10.9c1.6-3.9,5.6-5.3,8.9-3.1C264,252.8,265.4,257.7,263.8,261.5z' }, ease: 'elastic.out' });
+  gsap.to('path#mainscreen-hw-lower-first', { duration: 0.75, attr: { d: 'M368.7,95.2l-210.6,12.6c-3.3,0.2-5.1,1.9-5.3,4l-6.6,147.2c-0.1,2.6,3.8,5.3,8.3,5.5l200.9,12c5.8,0.3,10.3-2.5,10.5-6.7l9.8-168.9C375.9,98.2,371.9,95,368.7,95.2z' }, ease: 'elastic.out' });
+  gsap.to('path#mainscreen-depth-first', { duration: 0.75, attr: { d: 'M372.1,96.1l-205.3,16.2c-2.2,0.1-3.6,1.2-3.6,2.7l-15.5,146.3c0.2,1.2,5.3,4.8,9.7,5.1l201,11.4c5.5,0.3,10.1-3.6,10.4-6.8l9.8-167.1c0.1-0.8-0.2-1.4-0.7-2C375.4,98.5,374.2,97.3,372.1,96.1z' }, ease: 'elastic.out' });
+  gsap.to('path#box-top', { duration: 0.75, attr: { d: 'M166.4,118l190-9.5l-1.1,17.2l-189.7,7.9L166.4,118z' }, ease: 'elastic.out' });
+  gsap.to('path#box-right-bottom', { duration: 0.75, attr: { d: 'M349.9,211.9l-1.4,22.6l-189-5.2l0.8-17L349.9,211.9z' }, ease: 'elastic.out' });
+  gsap.to('path#box-left-middle', { duration: 0.75, attr: { d: 'M161,207.5l4.1-69l65.5-2.3l-4.2,71.3L161,207.5z' }, ease: 'elastic.out' });
+  gsap.to('path#box-right-middle', { duration: 0.75, attr: { d: 'M354.5,131.2l-4.3,75.8l-119.2,0.6l4-71.5L354.5,131.2z' }, ease: 'elastic.out' });
+  gsap.to('path#blue-symbol-topleft', { duration: 0.75, attr: { d: 'M176.4,124.2c-0.1-0.9-1.8-1.6-2.8-1.6c-0.9,0.1-2.6,0.8-2.6,1.8c0.1,0.9,1.8,1.6,2.8,1.6C174.7,125.9,176.4,125.1,176.4,124.2z' }, ease: 'elastic.out' });
+  gsap.to('path#coding-lines-big', { duration: 0.75, attr: { d: 'M273,141.6l-34,0.7 M239,148.3l42.5-0.7 M252.8,154.3l42.5-0.7 M309.2,159.6l-42.5,0.7 M295.3,165.6l-42.5,0.7 M280.1,171.6l-42.5,0.7 M269.8,177.8l-32.7,0 M280.1,183.7l-43.6,0.5 M291,189.9l-42.3,0.1M262.5,196.1l42.3-0.3 M279.2,202l-16.5,0' }, ease: 'elastic.out' });
+  gsap.to('path#coding-lines-min', { duration: 0.75, attr: { d: 'M344.3,133.4l-7.8,0.2 M336.6,135l9.7-0.2 M339.7,136.3l9.7-0.2 M352.6,137.6l-9.7,0.2 M349.4,138.9l-9.7,0.2 M346,140.3l-9.7,0.2 M343.6,141.7l-7.5,0 M346,143.1l-10,0.1 M348.4,144.5l-9.7,0M341.9,145.9l9.7-0.1 M345.7,147.3l-3.8,0' }, ease: 'elastic.out' });
+  gsap.to('path#mainscreen-leg-shadow-first', { duration: 0.75, attr: { d: 'M254.1,261.6c0.4,4,2,9.1,3.2,12c7.8-0.5,33.6,0.8,45.9,5.4c-0.8-12.6-6.6-20.8-6.6-20.8L254.1,261.6z' }, ease: 'elastic.out' });
+  gsap.to('path#mainscreen-leg-first', { duration: 0.75, attr: { d: 'M292.2,257.6c0,0,9.6,2.1,11.3,23.6c0.5,7.1,1.2,11.3-1.2,13.4c-2.4,2.2-13.3,6.3-20.3,9.4c-3.8,1.7-5.8,2.1-15,1.3c-13.4-1.2-52-5.5-52-5.5s26.8-6.1,34.8-10.2c7.5-3.7,8.1-6.3,8.1-12c0-4.6-3.4-8.6-3.7-16L292.2,257.6z' }, ease: 'elastic.out' });
+  gsap.to('path#shadow-under-first', { duration: 0.75, attr: { d: 'M373.2,302.8c1,5-46.2,6.8-98.4,8.3c-55.5,1.5-129-9.1-127.7-13c3-9,103-16.6,149.7-15.3C352.5,284.3,371.5,294.5,373.2,302.8z' }, ease: 'elastic.out' });
+}
+
+if (iconCarrier_development) {
+  const devSvg = iconCarrier_development.querySelector('svg');
+  (devSvg || iconCarrier_development).addEventListener('click', function() {
+    if (iconCarrier_development.classList.contains('open')) {
+      iconCarrier_development.classList.remove('open');
+      gsap.to('path#mainscreen-display-first', { duration: 1, attr: { d: 'M346,65.6l-139.3,57.7c-1.2,0.5-2,1.6-2.2,2.8l-16.3,108.3l138.8-9.7l24-155.1C351.5,66.7,348.6,64.5,346,65.6z' }, ease: 'expo.out' });
+      gsap.to('path#mainscreen-hw-upper-first', { duration: 1, attr: { d: 'M352.3,58.6l-150.9,62.5c-1.3,0.5-2.2,1.7-2.4,3.1l-17.6,117.2l150.3-10.5l26-168C358.2,59.8,355.2,57.4,352.3,58.6z' }, ease: 'expo.out' });
+      gsap.to('path#onoff-btn-first', { duration: 1, attr: { d: 'M251.3,253.5c-1.1,3.6-3.9,5-6.3,3c-2.4-2-3.4-6.6-2.3-10.3c1.1-3.7,4-5,6.3-3C251.4,245.2,252.4,249.8,251.3,253.5z' }, ease: 'expo.out' });
+      gsap.to('path#mainscreen-hw-lower-first', { duration: 1, attr: { d: 'M352.4,59.2l-150.1,61.1c-1.9,0.8-3.1,2.6-3.5,4.6l-20.4,134c-0.4,2.4,1.5,4.6,4,4.6l136.7-0.6c4.9,0,9-3.6,9.8-8.4l29.1-191C358.2,60.5,355.2,58.1,352.4,59.2z' }, ease: 'expo.out' });
+      gsap.to('path#mainscreen-depth-first', { duration: 1, attr: { d: 'M355.3,58.6l-148.6,64.6c-1.3,0.5-2.2,1.7-2.4,3.1l-24.6,134.4c0,1.1,2.4,4.1,4.8,4.1l139.2,0.4c4.6-0.1,9-4.7,9.7-8.4l29.7-190.4c0.2-0.9,0-1.5-0.4-2C360.9,61.3,356.9,59.3,355.3,58.6z' }, ease: 'expo.out' });
+      gsap.to('path#box-top', { duration: 1, attr: { d: 'M208.6,126.3l132.8-53.7l-3.8,21.8l-131.1,47L208.6,126.3z' }, ease: 'expo.out' });
+      gsap.to('path#box-right-bottom', { duration: 1, attr: { d: 'M322.5,192l-4,25.7l-126.1,11.5l2.4-15.6L322.5,192z' }, ease: 'expo.out' });
+      gsap.to('path#box-left-middle', { duration: 1, attr: { d: 'M195.6,209.2l10.1-63.2l39.1-13.3l-11,70L195.6,209.2z' }, ease: 'expo.out' });
+      gsap.to('path#box-right-middle', { duration: 1, attr: { d: 'M335.6,101l-13.1,85.8l-86,15l11-69.5L335.6,101z' }, ease: 'expo.out' });
+      gsap.to('path#blue-symbol-topleft', { duration: 1, attr: { d: 'M212.9,129.7c0.1-0.8-0.8-1.1-1.4-0.9c-0.5,0.2-1.5,1.2-1.6,2c-0.1,0.8,0.8,1.1,1.3,0.9C211.8,131.5,211.8,130.5,211.9,129.7z' }, ease: 'expo.out' });
+      gsap.to('path#coding-lines-big', { duration: 1, attr: { d: 'M272,130.8l-22.2,6.9 M249.2,143.5l28-8.3 M257.2,147l28.9-8.2 M295.4,142.4l-29.8,8.2 M284.7,151.1l-28.8,7.7 M273.4,159.7l-27.9,7.1 M265.6,167.5l-21.1,4.7 M271.9,171.9l-28.5,6.5 M278.7,176.7l-28.3,5.8 M258.6,186.8l29.2-5.9 M269.1,190.7l-11.1,2' }, ease: 'expo.out' });
+      gsap.to('path#coding-lines-min', { duration: 1, attr: { d: 'M327.6,105.8l-6.4,2.1 M321.1,109.3l8-2.5 M323.5,110.1l8.1-2.5 M334.1,108.3l-8.2,2.5 M331.3,110.6l-8.1,2.5 M328.2,112.9l-8,2.4 M326,115l-6.1,1.7 M327.9,116l-8.2,2.4 M329.7,117l-8,2.2 M324.2,120l8.1-2.3 M327.2,120.6l-3.1,0.9' }, ease: 'expo.out' });
+      gsap.to('path#mainscreen-leg-shadow-first', { duration: 1, attr: { d: 'M273.1,264.7c1,3.5,1.9,6.8,2.7,9.7c10.3,0.2,24.3,2.2,35.2,7.8c-3.8-11.4-5.8-19.1-5.8-19.1L273.1,264.7z' }, ease: 'expo.out' });
+      gsap.to('path#mainscreen-leg-first', { duration: 1, attr: { d: 'M305.1,263.1c0,0,3.4,12.7,9.4,29.7c1.6,4.6,1.4,8.2-2.6,8.9c-4,0.7-22.4,2.3-28,2.7c-7.5,0.5-8.8,0.4-17.1-0.3c-15.8-1.3-50.5-3.1-50.5-3.1s39-1,49-1.8c10-0.8,12.4-4.2,13.4-7.7c1-3.4-1.9-13.3-5.6-26.8L305.1,263.1z' }, ease: 'expo.out' });
+      gsap.to('path#shadow-under-first', { duration: 1, attr: { d: 'M372.3,304.7c0,3.3-45.1,4.8-97.3,5.3c-31.5,0.3-92.2-3.2-91.7-5.3c1.2-5.1,60.4-3,89.8-3.7C328.8,299.8,372.3,302.6,372.3,304.7z' }, ease: 'expo.out' });
+    } else {
+      iconCarrier_development.classList.add('open');
+      gsap.to('path#mainscreen-display-first', { duration: 0.75, attr: { d: 'M361.1,101.8l-198.9,10.6c-2.5,0.2-3.9,1.5-3.9,3.3l-5.3,118.8l206.8,6.8l7.9-134.2C367.8,104.6,364.1,101.6,361.1,101.8z' }, ease: 'elastic.out' });
+      gsap.to('path#mainscreen-hw-upper-first', { duration: 0.75, attr: { d: 'M368.7,95.2l-211.1,12.7c-2.7,0.2-4.5,1.9-4.7,3.9l-5.8,128.5l220,8.7l8.6-148C375.9,98.2,371.9,95,368.7,95.2z' }, ease: 'elastic.out' });
+      gsap.to('path#onoff-btn-first', { duration: 0.75, attr: { d: 'M263.8,261.5c-1.5,3.8-5.5,5.3-8.8,3.2c-3.4-2.1-4.8-7-3.3-10.9c1.6-3.9,5.6-5.3,8.9-3.1C264,252.8,265.4,257.7,263.8,261.5z' }, ease: 'elastic.out' });
+      gsap.to('path#mainscreen-hw-lower-first', { duration: 0.75, attr: { d: 'M368.7,95.2l-210.6,12.6c-3.3,0.2-5.1,1.9-5.3,4l-6.6,147.2c-0.1,2.6,3.8,5.3,8.3,5.5l200.9,12c5.8,0.3,10.3-2.5,10.5-6.7l9.8-168.9C375.9,98.2,371.9,95,368.7,95.2z' }, ease: 'elastic.out' });
+      gsap.to('path#mainscreen-depth-first', { duration: 0.75, attr: { d: 'M372.1,96.1l-205.3,16.2c-2.2,0.1-3.6,1.2-3.6,2.7l-15.5,146.3c0.2,1.2,5.3,4.8,9.7,5.1l201,11.4c5.5,0.3,10.1-3.6,10.4-6.8l9.8-167.1c0.1-0.8-0.2-1.4-0.7-2C375.4,98.5,374.2,97.3,372.1,96.1z' }, ease: 'elastic.out' });
+      gsap.to('path#box-top', { duration: 0.75, attr: { d: 'M166.4,118l190-9.5l-1.1,17.2l-189.7,7.9L166.4,118z' }, ease: 'elastic.out' });
+      gsap.to('path#box-right-bottom', { duration: 0.75, attr: { d: 'M349.9,211.9l-1.4,22.6l-189-5.2l0.8-17L349.9,211.9z' }, ease: 'elastic.out' });
+      gsap.to('path#box-left-middle', { duration: 0.75, attr: { d: 'M161,207.5l4.1-69l65.5-2.3l-4.2,71.3L161,207.5z' }, ease: 'elastic.out' });
+      gsap.to('path#box-right-middle', { duration: 0.75, attr: { d: 'M354.5,131.2l-4.3,75.8l-119.2,0.6l4-71.5L354.5,131.2z' }, ease: 'elastic.out' });
+      gsap.to('path#blue-symbol-topleft', { duration: 0.75, attr: { d: 'M176.4,124.2c-0.1-0.9-1.8-1.6-2.8-1.6c-0.9,0.1-2.6,0.8-2.6,1.8c0.1,0.9,1.8,1.6,2.8,1.6C174.7,125.9,176.4,125.1,176.4,124.2z' }, ease: 'elastic.out' });
+      gsap.to('path#coding-lines-big', { duration: 0.75, attr: { d: 'M273,141.6l-34,0.7 M239,148.3l42.5-0.7 M252.8,154.3l42.5-0.7 M309.2,159.6l-42.5,0.7 M295.3,165.6l-42.5,0.7 M280.1,171.6l-42.5,0.7 M269.8,177.8l-32.7,0 M280.1,183.7l-43.6,0.5 M291,189.9l-42.3,0.1M262.5,196.1l42.3-0.3 M279.2,202l-16.5,0' }, ease: 'elastic.out' });
+      gsap.to('path#coding-lines-min', { duration: 0.75, attr: { d: 'M344.3,133.4l-7.8,0.2 M336.6,135l9.7-0.2 M339.7,136.3l9.7-0.2 M352.6,137.6l-9.7,0.2 M349.4,138.9l-9.7,0.2 M346,140.3l-9.7,0.2 M343.6,141.7l-7.5,0 M346,143.1l-10,0.1 M348.4,144.5l-9.7,0M341.9,145.9l9.7-0.1 M345.7,147.3l-3.8,0' }, ease: 'elastic.out' });
+      gsap.to('path#mainscreen-leg-shadow-first', { duration: 0.75, attr: { d: 'M254.1,261.6c0.4,4,2,9.1,3.2,12c7.8-0.5,33.6,0.8,45.9,5.4c-0.8-12.6-6.6-20.8-6.6-20.8L254.1,261.6z' }, ease: 'elastic.out' });
+      gsap.to('path#mainscreen-leg-first', { duration: 0.75, attr: { d: 'M292.2,257.6c0,0,9.6,2.1,11.3,23.6c0.5,7.1,1.2,11.3-1.2,13.4c-2.4,2.2-13.3,6.3-20.3,9.4c-3.8,1.7-5.8,2.1-15,1.3c-13.4-1.2-52-5.5-52-5.5s26.8-6.1,34.8-10.2c7.5-3.7,8.1-6.3,8.1-12c0-4.6-3.4-8.6-3.7-16L292.2,257.6z' }, ease: 'elastic.out' });
+      gsap.to('path#shadow-under-first', { duration: 0.75, attr: { d: 'M373.2,302.8c1,5-46.2,6.8-98.4,8.3c-55.5,1.5-129-9.1-127.7-13c3-9,103-16.6,149.7-15.3C352.5,284.3,371.5,294.5,373.2,302.8z' }, ease: 'elastic.out' });
+    }
+  }, false);
+}
