@@ -25,6 +25,24 @@ gsap.set("#work .h1-heading", { y: 50, opacity: 0 });
 gsap.set(".intro-logo", { y: 20, opacity: 0, scale: 0.96 });
 gsap.set(".intro-tag", { y: 30, opacity: 0 });
 
+const lockInteraction = () => {
+  if (typeof lenis !== 'undefined' && lenis && typeof lenis.stop === 'function') {
+    lenis.stop();
+  }
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+  document.body.style.touchAction = 'none';
+};
+
+const unlockInteraction = () => {
+  if (typeof lenis !== 'undefined' && lenis && typeof lenis.start === 'function') {
+    lenis.start();
+  }
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  document.body.style.touchAction = '';
+};
+
 function animateNavbar() {
   const tl = gsap.timeline();
   tl.from(".nav", {
@@ -103,13 +121,15 @@ function startAnimations() {
 }
 function animateImpression() {
   const intro = document.getElementById('intro');
-  if (!intro) { startAnimations(); return; }
+  if (!intro) { unlockInteraction(); startAnimations(); return; }
 
+  lockInteraction();
   const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
   tl.to(".intro-logo", { y: 0, opacity: 1, scale: 1, duration: 0.6 })
     .to(".intro-tag", { y: 0, opacity: 1, duration: 0.45 }, "-=0.25")
     .to("#intro", { opacity: 0, duration: 0.5, delay: 0.3 })
     .set("#intro", { display: "none", pointerEvents: "none" })
+    .add(unlockInteraction)
     .add(startAnimations);
 }
 
@@ -149,14 +169,7 @@ let lastScrollTop = 0;
 const navEl = document.querySelector('.nav');
 
 window.addEventListener('scroll', () => {
-  // Don't auto-hide while the mobile menu is open
-  if (navEl.classList.contains('nav--open')) return;
   const st = window.pageYOffset || document.documentElement.scrollTop;
-  if (st > lastScrollTop + 5) {
-    navEl.classList.add('nav--hidden');
-  } else {
-    navEl.classList.remove('nav--hidden');
-  }
   navEl.classList.toggle('nav--scrolled', st > 20);
   lastScrollTop = st <= 0 ? 0 : st;
 });
@@ -164,6 +177,7 @@ window.addEventListener('scroll', () => {
 // Mobile hamburger toggle
 const hamburger = document.getElementById('hamburger');
 if (hamburger && navEl) {
+  navEl.classList.remove('nav--hidden');
   hamburger.addEventListener('click', () => {
     const open = navEl.classList.toggle('nav--open');
     hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -173,6 +187,21 @@ if (hamburger && navEl) {
       navEl.classList.remove('nav--open');
       hamburger.setAttribute('aria-expanded', 'false');
     });
+  });
+}
+
+const scrollUpBtn = document.getElementById('scrollUpBtn');
+if (scrollUpBtn) {
+  scrollUpBtn.addEventListener('click', () => {
+    if (typeof lenis !== 'undefined' && lenis && typeof lenis.scrollTo === 'function') {
+      lenis.scrollTo(0, { duration: 1 });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+  window.addEventListener('scroll', () => {
+    const st = window.pageYOffset || document.documentElement.scrollTop;
+    scrollUpBtn.classList.toggle('scroll-up--visible', st > 300);
   });
 }
 
@@ -533,3 +562,37 @@ function setupWorkSlider(slider) {
 
 // Initialize all sliders on the page
 document.querySelectorAll('.work-slider').forEach(setupWorkSlider);
+
+function setupDragDirection() {
+  const dragImage = document.querySelector(".page1 .ylw img[src*='tp3']");
+  if (!dragImage) return;
+  dragImage.setAttribute('draggable', 'false');
+  let active = false;
+  const setRotate = gsap.quickSetter(dragImage, 'rotate', 'deg');
+  const onMove = (e) => {
+    if (!active) return;
+    const rect = dragImage.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    setRotate(angle);
+  };
+  dragImage.addEventListener('pointerdown', (e) => {
+    active = true;
+    dragImage.classList.add('dragging');
+    dragImage.setPointerCapture(e.pointerId);
+    onMove(e);
+  });
+  const end = () => {
+    active = false;
+    dragImage.classList.remove('dragging');
+    setRotate(0);
+  };
+  dragImage.addEventListener('pointermove', onMove);
+  dragImage.addEventListener('pointerup', end);
+  dragImage.addEventListener('pointercancel', end);
+}
+
+setupDragDirection();

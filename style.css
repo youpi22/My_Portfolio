@@ -117,7 +117,7 @@ html.lenis {
   z-index: 1000;
   gap: 1.5rem;
   width: 90%;
-  max-width: 500px;
+  max-width: 530px;
   min-width: 0;
   height: 60px;
   /* CHANGE: Shadow on bottom */
@@ -125,7 +125,7 @@ html.lenis {
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   transition: all 0.3s ease-in-out;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* Hide navbar when scrolling down */
@@ -245,8 +245,8 @@ html.lenis {
 /* New styles for the navigation items */
 .nav-items {
   display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  gap: 1rem;
+  flex-wrap: nowrap;
   justify-content: center;
   align-items: center;
 }
@@ -1058,7 +1058,7 @@ footer {
 }
 .nav {
     padding: 6% 2% 4% 2%; /* adjust bottom padding */
-    width: 95%;
+    width: 100%;
   }
     .thanks-desc{
         display: none;

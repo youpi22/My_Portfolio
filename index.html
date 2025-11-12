@@ -37,6 +37,8 @@
     <a href="#work" onclick="scrollToSection(event, '#work')">Work</a>
     <a href="#about" onclick="scrollToSection(event, '#about')">About</a>
     <a href="#contact" onclick="scrollToSection(event, '#contact')">Contact</a>
+    <a href="Goroy_Resume.pdf" target="_blank">Resume</a>
+
 </div>  
             <div class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false">
                 <div class="bar1"></div>
@@ -628,26 +630,7 @@
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
     <script src="script.js"></script>
-    <script>
-  // Hide/show top navbar on scroll
-  let lastScrollTop = 0;
-  const nav = document.querySelector('.nav');
-
-  window.addEventListener('scroll', () => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-    if (scrollTop > lastScrollTop) {
-      // Scrolling down → hide navbar by moving it up and out of the viewport
-      // The height is 60px, so -100px ensures it's completely hidden.
-      nav.style.top = '-100px'; 
-    } else {
-      // Scrolling up → show navbar
-      nav.style.top = '0'; // show at the top
-    }
-
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-  });
-</script>
+    
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
