@@ -21,6 +21,7 @@ if (typeof ScrollTrigger !== 'undefined') {
 }
 
 let animationsTriggered = false;
+let floaterTween = null;
 gsap.set("#work .h1-heading", { y: 50, opacity: 0 });
 gsap.set(".intro-logo", { y: 20, opacity: 0, scale: 0.96 });
 gsap.set(".intro-tag", { y: 30, opacity: 0 });
@@ -63,6 +64,17 @@ function animateNavbar() {
     );
 }
 
+function animateNavIconsLoop() {
+  gsap.to(".nav-icons img", {
+    y: -4,
+    duration: 1,
+    yoyo: true,
+    repeat: -1,
+    ease: "sine.inOut",
+    stagger: 0.12,
+  });
+}
+
 function animateNavItems() {
   gsap.from(".nav-items a, .nav-icons a", {
     x: -100,
@@ -72,6 +84,19 @@ function animateNavItems() {
       amount: 0.5,
       each: 0.12,
     },
+  });
+}
+
+function animateFloaterLoop() {
+  const el = document.getElementById('scrollUpBtn');
+  if (!el) return;
+  floaterTween = gsap.to(el, {
+    y: -6,
+    duration: 1.2,
+    yoyo: true,
+    repeat: -1,
+    ease: 'sine.inOut',
+    paused: true,
   });
 }
 
@@ -114,6 +139,8 @@ function startAnimations() {
     gsap.to(mainContent, { opacity: 1, duration: 1 });
     // Animate navbar container first, then its items
     animateNavbar();
+    animateNavIconsLoop();
+    animateFloaterLoop();
     animatePage1();
     initScrollTriggers();
     animationsTriggered = true; // Mark the animations as triggered
@@ -191,6 +218,24 @@ if (hamburger && navEl) {
 }
 
 const scrollUpBtn = document.getElementById('scrollUpBtn');
+if (scrollUpBtn) {
+  scrollUpBtn.addEventListener('click', () => {
+    if (typeof lenis !== 'undefined' && lenis && typeof lenis.scrollTo === 'function') {
+      lenis.scrollTo(0, { duration: 1 });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+  window.addEventListener('scroll', () => {
+    const st = window.pageYOffset || document.documentElement.scrollTop;
+    scrollUpBtn.classList.toggle('scroll-up--visible', st > 300);
+    if (floaterTween) {
+      if (st > 300) floaterTween.play(); else floaterTween.pause();
+    }
+  });
+}
+
+// scrollUpBtn already declared above; skip re-declaration
 if (scrollUpBtn) {
   scrollUpBtn.addEventListener('click', () => {
     if (typeof lenis !== 'undefined' && lenis && typeof lenis.scrollTo === 'function') {
