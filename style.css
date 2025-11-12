@@ -198,6 +198,10 @@ html.lenis {
 .ylw {
     position: relative;
     display: flex;
+    align-items: flex-start; /* align slider with text top baseline */
+    justify-content: center; /* keep horizontal centering within the column */
+    padding-top: var(--title-offset, 15%); /* match text block offset; adjustable per section */
+    box-sizing: border-box;
     background:  #b3abab;
     width: 50%;
     height: 100lvh;
