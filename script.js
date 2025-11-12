@@ -329,6 +329,54 @@ gsap.from(".aboutdescbox .aboutright", {
   }
 });
 
+let aboutScaleTween;
+let aboutBorderTween;
+let aboutFloatTween;
+if (typeof ScrollTrigger !== 'undefined') {
+  ScrollTrigger.create({
+    trigger: '.aboutdesc',
+    start: 'top 85%',
+    onEnter: () => {
+      aboutScaleTween = gsap.to('.aboutdesc', {
+        scale: 1.01,
+        duration: 3,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+      });
+      aboutBorderTween = gsap.to('.aboutdesc', {
+        borderColor: '#FFD369',
+        duration: 2.5,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+      });
+      aboutFloatTween = gsap.to('.aboutdesc', {
+        y: -8,
+        duration: 2.2,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+      });
+    },
+    onLeave: () => {
+      if (aboutScaleTween) aboutScaleTween.pause();
+      if (aboutBorderTween) aboutBorderTween.pause();
+      if (aboutFloatTween) aboutFloatTween.pause();
+    },
+    onEnterBack: () => {
+      if (aboutScaleTween) aboutScaleTween.play();
+      if (aboutBorderTween) aboutBorderTween.play();
+      if (aboutFloatTween) aboutFloatTween.play();
+    },
+    onLeaveBack: () => {
+      if (aboutScaleTween) aboutScaleTween.pause();
+      if (aboutBorderTween) aboutBorderTween.pause();
+      if (aboutFloatTween) aboutFloatTween.pause();
+    }
+  });
+}
+
 const expert = document.querySelectorAll('.my-expertise .blk .expertise');
 expert.forEach((experts) => {
 
@@ -452,6 +500,7 @@ function initScrollTriggers() {
       }
     });
   }
+
 
   // Refresh once after setup (important when using Lenis)
   if (typeof ScrollTrigger !== 'undefined') {
@@ -641,3 +690,33 @@ function setupDragDirection() {
 }
 
 setupDragDirection();
+
+function animateTP3() {
+  const tp3Desktop = document.querySelector(".page1 .ylw img[src*='tp3']");
+  const tp3Mobile = document.querySelector("img.page1mbimg[src*='tp3']") || document.querySelector(".page1mbimg");
+  [tp3Desktop, tp3Mobile].forEach((el) => {
+    if (!el) return;
+    gsap.to(el, {
+      y: -50,
+      rotation: 2,
+      duration: 2,
+      yoyo: true,
+      repeat: -1,
+      ease: 'sine.inOut'
+    });
+    if (typeof ScrollTrigger !== 'undefined') {
+      gsap.to(el, {
+        yPercent: 3,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: el,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: true
+        }
+      });
+    }
+  });
+}
+
+animateTP3();
