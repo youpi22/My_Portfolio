@@ -177,6 +177,13 @@ function animateImpression() {
 
   if (bulbReady) {
     window.addEventListener('bulb-on', runIntro, { once: true });
+    const introEl = document.getElementById('intro');
+    if (introEl) {
+      const go = () => runIntro();
+      introEl.addEventListener('click', go, { once: true });
+      introEl.addEventListener('touchend', go, { once: true });
+      introEl.addEventListener('pointerup', go, { once: true });
+    }
   } else {
     runIntro();
   }
@@ -786,15 +793,23 @@ window.setupBulbSwitch = function setupBulbSwitch() {
   const tapToggle = () => toggleTL.restart();
   hit.addEventListener('click', tapToggle, { passive: true });
   hit.addEventListener('touchend', tapToggle, { passive: true });
+  hit.addEventListener('pointerup', tapToggle, { passive: true });
 
   // Improve touch usability: enlarge hit-spot on coarse pointers
   try {
     const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     if (coarse) {
       const r = parseFloat(hit.getAttribute('r')) || 60;
-      hit.setAttribute('r', String(Math.max(r, 90)));
+      hit.setAttribute('r', String(Math.max(r, 110)));
     }
   } catch (_) {}
+
+  const svgRoot = document.querySelector('.toggle-scene');
+  if (svgRoot) {
+    svgRoot.addEventListener('click', tapToggle, { passive: true });
+    svgRoot.addEventListener('touchend', tapToggle, { passive: true });
+    svgRoot.addEventListener('pointerup', tapToggle, { passive: true });
+  }
 
   return { toggleTimeline: toggleTL };
 };
