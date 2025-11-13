@@ -16,6 +16,7 @@
     <link rel="icon" type="image/ico" href="favicon.ico">
     <link rel="canonical" property="canonical" href="https://www.reynaldogoroy.online" />
     <link rel="stylesheet" href="style.css">
+    
 </head>
 
 <body>
@@ -565,6 +566,7 @@
                     </div>
                 </section>
             </div>
+            
             <section class="page2 my-expertise">
                 <div class="blk">
                     <div class="expertise">
@@ -701,10 +703,12 @@
                             <input type="hidden" name="_next" value="https://amangulia.com/thanks.html">
 
 
-                            <input type="text" name="name" placeholder="Your Name" required>
-                            <input type="email" name="email" placeholder="Your Email" required>
-                            <textarea name="message" placeholder="Your brilliant idea or your Message!
-                                    " required></textarea>
+                            <label for="name">Your Name</label>
+                            <input id="name" type="text" name="name" placeholder="John Doe" required>
+                            <label for="email">Your Email</label>
+                            <input id="email" type="email" name="email" placeholder="john@example.com" required>
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" placeholder="Your brilliant idea or your message" required></textarea>
                             <button type="submit" class="submit">Send Message</button>
                         </form>
                     </div>
@@ -743,6 +747,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
     <script src="https://assets.codepen.io/16327/MorphSVGPlugin3.min.js"></script>
     <script src="https://unpkg.com/gsap@3/dist/Draggable.min.js"></script>
+    
     <button id="scrollUpBtn" class="scroll-up" aria-label="Scroll to top">↑</button>
     <script src="script.js"></script>
     

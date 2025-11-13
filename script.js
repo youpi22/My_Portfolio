@@ -191,35 +191,21 @@ function setupBulbPrompt() {
   const prompt = document.querySelector('.bulb-prompt');
   if (!prompt) return;
   const text = prompt.textContent;
+  prompt.setAttribute('aria-label', text);
   const parts = text.split('').map((c) => (c === ' ' ? '&nbsp;' : c));
-  prompt.innerHTML = parts.map((c) => `<span class="bulb-ch">${c}</span>`).join('');
+  prompt.innerHTML = parts.map((c) => `<span class="bulb-ch" aria-hidden="true">${c}</span>`).join('');
   const spans = prompt.querySelectorAll('.bulb-ch');
-  gsap.set(spans, { display: 'inline-block' });
-  const qx = Array.from(spans).map((el) => gsap.quickSetter(el, 'x', 'px'));
-  const qy = Array.from(spans).map((el) => gsap.quickSetter(el, 'y', 'px'));
-  const qr = Array.from(spans).map((el) => gsap.quickSetter(el, 'rotation', 'deg'));
-  const ampY = 8;
-  const ampX = 5;
-  const speed = 2.2;
-  const phase = 0.45;
-  const tick = () => {
-    const t = gsap.ticker.time * speed;
-    for (let i = 0; i < spans.length; i++) {
-      const s = Math.sin(t + i * phase);
-      const c = Math.cos(t + i * phase);
-      qy[i](ampY * s);
-      qx[i](ampX * c * 0.6);
-      qr[i](12 * s);
-    }
-  };
-  window.__bulbPromptTicker = tick;
-  gsap.ticker.add(tick);
+  gsap.set(spans, { display: 'inline-block', opacity: 0 });
+  const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.2, defaults: { ease: 'power2.out' } });
+  tl.to(spans, { opacity: 1, duration: 0.04, stagger: 0.08 })
+    .to(spans, { opacity: 0, duration: 0.03, stagger: { each: 0.05, from: 'end' } }, '+=1.2');
+  window.__bulbTypeTL = tl;
 }
 
 function stopBulbPrompt() {
-  if (window.__bulbPromptTicker) {
-    gsap.ticker.remove(window.__bulbPromptTicker);
-    window.__bulbPromptTicker = null;
+  if (window.__bulbTypeTL) {
+    window.__bulbTypeTL.kill();
+    window.__bulbTypeTL = null;
   }
 }
 
@@ -795,6 +781,20 @@ window.setupBulbSwitch = function setupBulbSwitch() {
   makeDrag(dummyLine);
   const cordsGroup = document.querySelector('.toggle-scene__cords');
   if (cordsGroup) makeDrag(cordsGroup);
+
+  // Mobile/touch fallback: allow simple tap to toggle
+  const tapToggle = () => toggleTL.restart();
+  hit.addEventListener('click', tapToggle, { passive: true });
+  hit.addEventListener('touchend', tapToggle, { passive: true });
+
+  // Improve touch usability: enlarge hit-spot on coarse pointers
+  try {
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (coarse) {
+      const r = parseFloat(hit.getAttribute('r')) || 60;
+      hit.setAttribute('r', String(Math.max(r, 90)));
+    }
+  } catch (_) {}
 
   return { toggleTimeline: toggleTL };
 };
