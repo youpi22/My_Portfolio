@@ -221,13 +221,6 @@ function animateImpression() {
 
   if (bulbReady) {
     window.addEventListener('bulb-on', runIntro, { once: true });
-    const introEl = document.getElementById('intro');
-    if (introEl) {
-      const go = () => runIntro();
-      introEl.addEventListener('click', go, { once: true });
-      introEl.addEventListener('touchend', go, { once: true });
-      introEl.addEventListener('pointerup', go, { once: true });
-    }
   } else {
     runIntro();
   }

@@ -811,6 +811,11 @@ padding-top: 0% !important;}
     }
 }
 
+.aboutdescbox .aboutleft { position: relative; }
+.slice-wrap { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; pointer-events: none; }
+.slice { position: absolute; left: 0; width: 100%; overflow: hidden; }
+.slice-img { position: absolute; left: 0; width: 100%; height: auto; }
+
 .my-expertise {
     height: 50lvh;
 
