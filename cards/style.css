@@ -1,0 +1,131 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	font-weight: 400;
+}
+
+:root {
+	--duration: 1s;
+	--ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body {
+	background: #ececec;
+	min-height: 100svh;
+	align-content: center;
+	font-family: "Instrument serif", "Times New Roman", serif;
+}
+
+h1 {
+	font-size: max(3rem, 6vw);
+	line-height: 1;
+}
+
+p {
+	font-size: max(1rem, 2vw);
+}
+
+.cards {
+	padding: 1rem;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1rem;
+	perspective: 1200px;
+	@media (width < 1024px) {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	@media (width < 500px) {
+		grid-template-columns: repeat(1, 1fr);
+	}
+}
+
+details {
+	pointer-events: none;
+	position: relative;
+	justify-self: center;
+	transform-style: preserve-3d;
+	width: 100%;
+	@media (prefers-reduced-motion: no-preference) {
+	&:hover {
+		rotate: 0deg;
+		svg {
+			translate: -5% -5%;
+		}
+	}
+		rotate: var(--rotation);
+		transition: transform var(--duration) var(--ease), rotate 0.3s var(--ease);
+	}
+	&[open] {
+		transform: rotateY(180deg);
+	}
+}
+
+summary,
+.back {
+	aspect-ratio: 3/4;
+	border: 5px solid #111;
+	border-radius: 1rem;
+	padding: 5%;
+	width: 100%;
+	backface-visibility: visible;
+	background: #fff5ee;
+}
+
+summary {
+	overflow: clip;
+	position: relative;
+	pointer-events: all;
+	cursor: pointer;
+	list-style: none;
+	transform: translateZ(2px);
+	svg {
+		position: absolute;
+		right: -10%;
+		bottom: -4%;
+		max-height: 40%;
+		max-width: 80%;
+		transform: rotate(-20deg);
+		transition: translate 0.4s var(--ease);
+	}
+	&::-webkit-details-marker {
+		display: none;
+	}
+}
+
+::details-content {
+	@media (prefers-reduced-motion: no-preference) {
+		transition: content-visibility var(--duration) ease-out allow-discrete;
+	}
+}
+
+.back {
+	pointer-events: none;
+	position: absolute;
+	top: 0;
+	transform: rotateY(180deg) translateZ(-1px);
+	align-content: end;
+	p:first-child {
+		font-size: max(1.25rem, 2.5vw);
+	}
+	p + p {
+		margin-top: 0.5em;
+	}
+	ul {
+		margin-top: 0.5em;
+		list-style-type: "";
+		padding: 0;
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		li {
+			padding: 0.25em;
+			border-radius: 0.25rem;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 0.7rem;
+			background: #111;
+			color: #e2fc91;
+		}
+	}
+}

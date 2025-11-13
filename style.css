@@ -930,10 +930,8 @@ padding-top: 0% !important;}
 .form {
     position: absolute;
     inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     gap: 2lvh;
     height: 100lvh;
     background: transparent;
@@ -945,7 +943,7 @@ padding-top: 0% !important;}
         justify-content: center;
         align-items: center;
         text-align: center;
-        width: min(92vw, 820px);
+        width: min(92vw, 740px);
         height: auto;
         border: 0;
         background: #000000;
@@ -955,6 +953,8 @@ padding-top: 0% !important;}
         position: relative;
         overflow: hidden;
         box-sizing: border-box;
+        margin: 0 auto;
+        transform: translateX(-2vw);
     }
 
 
@@ -1713,3 +1713,119 @@ footer {
     pointer-events: none;
     z-index: 0;
 }
+.cards { 
+  --duration: 1s; 
+  --ease: cubic-bezier(0.34, 1.56, 0.64, 1); 
+  padding: 1rem; 
+  display: grid; 
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 1rem; 
+  perspective: 1200px; 
+}
+@media (max-width: 1024px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .cards { grid-template-columns: repeat(1, 1fr); } }
+
+.cards details { 
+  pointer-events: none; 
+  position: relative; 
+  justify-self: center; 
+  transform-style: preserve-3d; 
+  width: 100%; 
+  rotate: var(--rotation); 
+  transition: transform var(--duration) var(--ease), rotate 0.3s var(--ease); 
+}
+.cards details:hover { rotate: 0deg; }
+.cards details:hover summary svg { transform: translate(-5%, -5%) rotate(-20deg); }
+.cards details[open] { transform: rotateY(180deg); }
+
+.cards details summary,
+.cards details .back { 
+  aspect-ratio: 2/3; 
+  border: 5px solid #111; 
+  border-radius: 1rem; 
+  padding: 5%; 
+  width: 100%; 
+  backface-visibility: visible; 
+  background: #fff5ee; 
+}
+
+.cards details summary { 
+  overflow: clip; 
+  position: relative; 
+  pointer-events: all; 
+  cursor: pointer; 
+  list-style: none; 
+  transform: translateZ(2px); 
+}
+.cards details summary svg { 
+  position: absolute; 
+  right: -10%; 
+  bottom: -4%; 
+  max-height: 40%; 
+  max-width: 80%; 
+  transform: rotate(-20deg); 
+  transition: transform 0.4s var(--ease); 
+}
+.cards details summary::-webkit-details-marker { display: none; }
+
+.cards details .back { 
+  pointer-events: none; 
+  position: absolute; 
+  top: 0; 
+  transform: rotateY(180deg) translateZ(-1px); 
+  align-content: end; 
+}
+.cards .back p:first-child { font-size: max(1.25rem, 2.5vw); }
+.cards .back p + p { margin-top: 0.5em; }
+.cards .back ul { 
+  margin-top: 0.5em; 
+  list-style-type: none; 
+  padding: 0; 
+  display: inline-flex; 
+  flex-wrap: wrap; 
+  gap: 0.5rem; 
+}
+.cards .back ul li { 
+  padding: 0.25em; 
+  border-radius: 0.25rem; 
+  font-family: "JetBrains Mono", monospace; 
+  font-size: 0.7rem; 
+  background: #111; 
+  color: #e2fc91; 
+}
+.cards-section {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  z-index: 3;
+  overflow: hidden;
+}
+.cards-section .cards {
+  width: min(92vw, 740px);
+  background: #121212;
+  padding: 24px;
+  box-shadow: 2vw 2vw 3vw #110c14;
+  border-radius: 24px;
+  color: #E8E4C9;
+  position: relative;
+  z-index: 2;
+}
+.cards-section .cards-bg-left { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: #000000; z-index: 1; }
+.cards-section .cards-bg-right { position: absolute; right: 0; top: 0; bottom: 0; width: 50%; background: #b3abab; z-index: 1; }
+.cards-section .cards h1 { color: #111; font-size: clamp(16px, 2.6vw, 22px); font-weight: 700; }
+.cards-section .cards summary,
+.cards-section .cards .back { border-color: #111; background: #fff5ee; color: #111; }
+.cards-section .cards .back p { font-size: clamp(12px, 2.0vw, 14px); line-height: 1.5; color: #111; }
+.cards-section .cards .back ul li { background: #111; color: #e2fc91; }
+
+@media (max-width: 768px) {
+  .cards-section .cards { width: 92vw; padding: 18px; }
+  .form .contact-form { width: 92vw; transform: none; }
+}
+
+/* Contact layout cards overrides */
+.form .cards details summary,
+.form .cards details .back { background: transparent; }
+.form .cards .back p { color: #E8E4C9; }
