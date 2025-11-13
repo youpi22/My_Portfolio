@@ -308,6 +308,16 @@ html.lenis {
     margin-top: 10%;
 }
 
+.typing-caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: currentColor;
+    margin-left: 4px;
+    animation: caretBlink 0.8s steps(1) infinite;
+    vertical-align: bottom;
+}
+
 .h1-stroke {
     color: #FFD369;
     /* Set the text color to white */

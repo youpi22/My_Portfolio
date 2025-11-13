@@ -136,6 +136,49 @@ function animatePage1() {
   });
 }
 
+function typeGreeting() {
+  const h1 = document.querySelector('.page1 .blk h1');
+  if (!h1) return;
+  const stroke = h1.querySelector('.h1-stroke');
+  const br = h1.querySelector('br');
+  let textNode = null;
+  let part1 = '';
+  h1.childNodes.forEach(n => {
+    if (n.nodeType === 3 && n.textContent.trim().length > 0) {
+      textNode = textNode || n;
+      part1 = n.textContent;
+    }
+  });
+  if (!stroke) return;
+  const part2 = stroke.textContent;
+  if (!textNode) { textNode = document.createTextNode(''); h1.insertBefore(textNode, h1.firstChild); }
+  textNode.textContent = '';
+  stroke.textContent = '';
+  if (br) br.style.visibility = 'hidden';
+  const caret = document.createElement('span');
+  caret.className = 'typing-caret';
+  h1.appendChild(caret);
+  let i = 0;
+  const total = part1.length + part2.length;
+  const speed = 60;
+  const start = () => {
+    const id = setInterval(() => {
+      i++;
+      if (i <= part1.length) {
+        textNode.textContent = part1.slice(0, i);
+      } else {
+        if (br) br.style.visibility = '';
+        const j = i - part1.length;
+        stroke.textContent = part2.slice(0, j);
+      }
+      if (i >= total) {
+        clearInterval(id);
+      }
+    }, speed);
+  };
+  setTimeout(start, 800);
+}
+
 function startAnimations() {
   // Check if the animations have already been triggered
   if (!animationsTriggered) {
@@ -147,6 +190,7 @@ function startAnimations() {
     animateNavIconsLoop();
     animateFloaterLoop();
     animatePage1();
+    typeGreeting();
     initScrollTriggers();
     animationsTriggered = true; // Mark the animations as triggered
   }
@@ -932,6 +976,18 @@ function myOutFunction() {
 
 if (iconCarrier_development) {
   const devSvg = iconCarrier_development.querySelector('svg');
+  try {
+    const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (isCoarse) {
+      const target = devSvg || iconCarrier_development;
+      const over = () => myOverFunction();
+      const out = () => myOutFunction();
+      target.addEventListener('touchstart', over, { passive: true });
+      target.addEventListener('touchend', out, { passive: true });
+      target.addEventListener('pointerdown', over, { passive: true });
+      target.addEventListener('pointerup', out, { passive: true });
+    }
+  } catch (_) {}
   (devSvg || iconCarrier_development).addEventListener('click', function() {
     if (iconCarrier_development.classList.contains('open')) {
       iconCarrier_development.classList.remove('open');
