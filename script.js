@@ -652,7 +652,7 @@ function setupWorkSlider(slider) {
   let autoplayTimer = null;
   const AUTOPLAY_MS = 4000;
 
-  // Inject controls and dots
+  // Inject controls and progress bar
   const prevBtn = document.createElement('button');
   prevBtn.className = 'work-prev';
   prevBtn.setAttribute('aria-label','Previous slide');
@@ -663,34 +663,39 @@ function setupWorkSlider(slider) {
   nextBtn.setAttribute('aria-label','Next slide');
   nextBtn.innerHTML = '&#10095;';
 
-  const dotsWrap = document.createElement('div');
-  dotsWrap.className = 'work-dots';
-  const dots = slides.map((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'work-dot';
-    d.setAttribute('role','button');
-    d.setAttribute('aria-label', `Go to slide ${i+1}`);
-    dotsWrap.appendChild(d);
-    return d;
-  });
+  const progress = document.createElement('div');
+  progress.className = 'work-progress';
+  const progressFill = document.createElement('div');
+  progressFill.className = 'work-progress-fill';
+  progress.appendChild(progressFill);
 
   slider.appendChild(prevBtn);
   slider.appendChild(nextBtn);
-  slider.appendChild(dotsWrap);
+  slider.appendChild(progress);
 
   function updateSlides(newIndex) {
-    slides.forEach((s, i) => {
+    const prevIndex = index;
+    const prevSlide = slides[prevIndex];
+    const nextSlide = slides[newIndex];
+
+    slides.forEach((s)=>{
       s.classList.remove('active','prev');
-      s.style.left = '100%';
-      s.style.opacity = '0';
+      s.style.left = '0%';
     });
-    const prevIndex = (newIndex - 1 + slides.length) % slides.length;
-    slides[prevIndex].classList.add('prev');
-    slides[prevIndex].style.left = '-100%';
-    slides[newIndex].classList.add('active');
-    slides[newIndex].style.left = '0';
-    slides[newIndex].style.opacity = '1';
-    dots.forEach((d,i)=>d.classList.toggle('active', i === newIndex));
+
+    if (prevSlide) {
+      prevSlide.classList.add('prev');
+      gsap.set(prevSlide, { xPercent: 0, opacity: 1, scale: 1, rotate: 0 });
+      gsap.to(prevSlide, { xPercent: -30, opacity: 0, scale: 0.98, duration: 0.6, ease: 'power2.out' });
+    }
+
+    nextSlide.classList.add('active');
+    gsap.set(nextSlide, { xPercent: 100, opacity: 0, scale: 0.98, rotate: -1 });
+    gsap.to(nextSlide, { xPercent: 0, opacity: 1, scale: 1, rotate: 0, duration: 0.7, ease: 'power3.out' });
+
+    const pct = ((newIndex + 1) / slides.length) * 100;
+    progressFill.style.width = pct + '%';
+
     index = newIndex;
   }
 
@@ -699,7 +704,7 @@ function setupWorkSlider(slider) {
 
   prevBtn.addEventListener('click', prev);
   nextBtn.addEventListener('click', next);
-  dots.forEach((d,i)=>d.addEventListener('click', ()=>updateSlides(i)));
+  // progress bar is not clickable; navigation via arrows/swipe/keys
 
   // Autoplay
   function startAutoplay(){

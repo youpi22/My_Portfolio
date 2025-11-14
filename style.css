@@ -413,14 +413,14 @@ html.lenis {
 }
 
 .icon-carrier svg {
-    width: 528px;
+    width: 640px;
     height: auto;
     pointer-events: all;
 }
 
 @media only screen and (max-width: 600px) {
     .icon-carrier svg {
-        width: 264px;
+        width: 320px;
     }
 }
 
@@ -623,24 +623,16 @@ html.lenis {
   margin: 0 auto;
   border-radius: 12px;
   overflow: hidden;
-  background:
-    radial-gradient(120% 120% at 80% 20%, rgba(255, 213, 105, calc(0.10 * var(--on))), rgba(255, 213, 105, 0) 60%),
-    linear-gradient(180deg, hsl(220 15% calc(9% + (6% * var(--on)))), hsl(220 15% calc(4% + (6% * var(--on)))));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 20px 40px rgba(0,0,0,0.35);
-  transition: background 300ms ease, box-shadow 300ms ease;
+  background: transparent;
+  box-shadow: none;
+  transition: none;
 }
 .work-slider::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(120% 70% at 50% 110%, rgba(0,0,0,0.6), rgba(0,0,0,0) 60%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 2px, rgba(0,0,0,0.03) 2px 4px);
-  mix-blend-mode: overlay;
-  opacity: 0.35;
+  display: none;
 }
 
 .work-slide {
@@ -667,8 +659,11 @@ html.lenis {
   width: 100%;
   height: 100%;
   object-fit: cover; /* keeps full image proportion */
+  object-position: center;
+  display: block;
   border-radius: 8px;
 }
+.work-slide { background: transparent; }
 
 /* Slider controls */
 .work-prev, .work-next {
@@ -711,6 +706,27 @@ html.lenis {
   transition: transform 0.2s ease, background 0.2s ease;
 }
 .work-dot.active { background: #FFD369; transform: scale(1.2); }
+
+/* Progress bar indicator (replaces dots) */
+.work-progress { 
+  position: absolute; 
+  bottom: 12px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 44%; 
+  height: 6px; 
+  border-radius: 999px; 
+  background: rgba(255,255,255,0.14); 
+  border: 1px solid var(--border); 
+  overflow: hidden; 
+  z-index: 10; 
+}
+.work-progress-fill { 
+  height: 100%; 
+  width: 0%; 
+  background: var(--accent); 
+  transition: width 400ms ease; 
+}
 
 @media screen and (max-width: 768px) {
   .work-slider {

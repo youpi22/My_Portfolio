@@ -217,7 +217,7 @@
                         <div class="roles"><b>Role:</b> Project Lead and Game Developer.</div>
                         <div class="page2-buttons">
                             <a href="https://youtu.be/7r1vU-fCc-w?si=sq_N4YPPIciwmypF" target="_blank" rel="noopener noreferrer"> <button class="view">Go to Video</button></a>
-                            <a  href="pamana.pdf" download="UserGuide.pdf"> <button class="casestudy">View Case-Study</button></a>
+                            <a  href="pamana.pdf" > <button class="casestudy">View Case-Study</button></a>
                         </div>
                     </div>
                 </div>
@@ -891,32 +891,7 @@
     <script src="script.js"></script>
     
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const sliders = document.querySelectorAll('.work-slider');
-
-  sliders.forEach(slider => {
-    const slides = slider.querySelectorAll('.work-slide');
-    let current = 0;
-
-    function showSlide(index) {
-      slides.forEach((slide, i) => {
-        slide.classList.remove('active', 'prev');
-        if (i === index) slide.classList.add('active');
-        if (i === (index - 1 < 0 ? slides.length - 1 : index - 1)) slide.classList.add('prev');
-      });
-    }
-
-    function nextSlide() {
-      current = (current + 1) % slides.length;
-      showSlide(current);
-    }
-
-    showSlide(current);
-    setInterval(nextSlide, 3000); // auto-slide every 3 seconds
-  });
-});
-</script>
+<!-- Slider logic is handled by script.js -->
 
 
     
