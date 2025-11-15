@@ -760,6 +760,7 @@ window.setupBulbSwitch = function setupBulbSwitch() {
   if (!cords.length || !hit || !dummy || !dummyLine) {
     return { toggleTimeline: gsap.timeline({ paused: true }) };
   }
+  let toggling = false;
   const proxy = document.createElement('div');
   const endX = dummyLine.getAttribute('x2');
   const endY = dummyLine.getAttribute('y2');
@@ -782,6 +783,7 @@ window.setupBulbSwitch = function setupBulbSwitch() {
       gsap.set([dummy, hit], { display: 'block' });
       gsap.set(cords[0], { display: 'none' });
       reset();
+      toggling = false;
       if (toggleTL._turnOn) {
         window.dispatchEvent(new Event('bulb-on'));
       } else {
@@ -802,26 +804,31 @@ window.setupBulbSwitch = function setupBulbSwitch() {
   }
 
   let startX = 0, startY = 0;
+  let dragging = false, lastTravelled = 0;
+  const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   const makeDrag = (triggerEl) => Draggable.create(proxy, {
     trigger: triggerEl,
     type: 'x,y',
     onPress: function() { startX = this.x; startY = this.y; },
     onDrag: function() {
+      dragging = true;
       gsap.set(dummyLine, { attr: { x2: this.x, y2: this.y } });
     },
     onRelease: function() {
       const distX = Math.abs(this.x - startX);
       const distY = Math.abs(this.y - startY);
       const travelled = Math.sqrt(distX * distX + distY * distY);
+      lastTravelled = travelled;
       gsap.to(dummyLine, {
         attr: { x2: endX, y2: endY },
         duration: 0.1,
         onComplete: () => {
-          if (travelled > 30) {
-            toggleTL.restart();
+          if (travelled > (coarse ? 10 : 30)) {
+            if (!toggling) { toggling = true; toggleTL.restart(); }
           } else {
             reset();
           }
+          dragging = false;
         }
       });
     }
@@ -831,26 +838,34 @@ window.setupBulbSwitch = function setupBulbSwitch() {
   const cordsGroup = document.querySelector('.toggle-scene__cords');
   if (cordsGroup) makeDrag(cordsGroup);
 
-  // Mobile/touch fallback: allow simple tap to toggle
-  const tapToggle = () => toggleTL.restart();
-  hit.addEventListener('click', tapToggle, { passive: true });
-  hit.addEventListener('touchend', tapToggle, { passive: true });
-  hit.addEventListener('pointerup', tapToggle, { passive: true });
+  // Mobile/touch fallback: simple tap toggles immediately
+  const tapToggle = (e) => {
+    if (dragging) return;
+    if (!toggling && lastTravelled < 8) { toggling = true; toggleTL.restart(); }
+  };
+  if (coarse) {
+    hit.addEventListener('touchend', tapToggle);
+    hit.addEventListener('pointerup', tapToggle);
+  } else {
+    hit.addEventListener('click', tapToggle);
+  }
 
   // Improve touch usability: enlarge hit-spot on coarse pointers
   try {
-    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     if (coarse) {
       const r = parseFloat(hit.getAttribute('r')) || 60;
-      hit.setAttribute('r', String(Math.max(r, 110)));
+      hit.setAttribute('r', String(Math.max(r, 140)));
     }
   } catch (_) {}
 
   const svgRoot = document.querySelector('.toggle-scene');
   if (svgRoot) {
-    svgRoot.addEventListener('click', tapToggle, { passive: true });
-    svgRoot.addEventListener('touchend', tapToggle, { passive: true });
-    svgRoot.addEventListener('pointerup', tapToggle, { passive: true });
+    if (coarse) {
+      svgRoot.addEventListener('touchend', tapToggle);
+      svgRoot.addEventListener('pointerup', tapToggle);
+    } else {
+      svgRoot.addEventListener('click', tapToggle);
+    }
   }
 
   return { toggleTimeline: toggleTL };

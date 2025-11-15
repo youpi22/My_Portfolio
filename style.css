@@ -413,14 +413,14 @@ html.lenis {
 }
 
 .icon-carrier svg {
-    width: 640px;
+    width: 528px;
     height: auto;
     pointer-events: all;
 }
 
 @media only screen and (max-width: 600px) {
     .icon-carrier svg {
-        width: 320px;
+        width: 264px;
     }
 }
 
@@ -1646,13 +1646,14 @@ footer {
   overflow: visible !important;
   height: 26vmin;
   pointer-events: all;
+  touch-action: manipulation;
 }
 .toggle-scene__cord { stroke: var(--cord); cursor: move; stroke-linecap: round; display: none; }
 .toggle-scene__cords .toggle-scene__cord { display: none; }
-.toggle-scene__dummy-cord { stroke-width: 6; stroke: var(--cord); display: block; pointer-events: auto; }
-.toggle-scene__dummy-cord line { marker-end: url(#a); stroke-linecap: round; pointer-events: stroke; }
-.toggle-scene__hit-spot { cursor: pointer; pointer-events: all; }
-.toggle-scene__cords { pointer-events: all; }
+.toggle-scene__dummy-cord { stroke-width: 6; stroke: var(--cord); display: block; pointer-events: auto; touch-action: none; }
+.toggle-scene__dummy-cord line { marker-end: url(#a); stroke-linecap: round; pointer-events: stroke; touch-action: none; }
+.toggle-scene__hit-spot { cursor: pointer; pointer-events: all; touch-action: none; }
+.toggle-scene__cords { pointer-events: all; touch-action: manipulation; }
 .bulb__cap-shine { display: none; }
 .toggle-scene__cord-end { stroke: var(--cord); fill: var(--cord); }
 .toggle-scene__dummy-cord { stroke-width: 6; stroke: var(--cord); }
